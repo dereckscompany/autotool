@@ -34,7 +34,8 @@ Pass \code{character()} to mark every argument optional.}
 \item{name}{Override the tool name. Defaults to the function name.}
 
 \item{description}{Override the tool description. Defaults to the
-parsed documentation title.}
+parsed documentation title, or a stub like \code{"Call <fn>()."} when no
+documentation title and no explicit override are available.}
 
 \item{format}{Output shape. One of \code{"openai"} (the default plain list)
 or \code{"ellmer"} (an \code{ellmer::tool()} R6 object).}

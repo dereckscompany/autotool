@@ -42,17 +42,28 @@ build_ellmer_tool <- function(rep, fn, defaults) {
   ))
 }
 
-#' Strip hidden arguments from a function's formals and bind their pinned
-#' values in the function's enclosing environment, so the body still finds
-#' them at execution time.
+#' Build an ellmer-facing wrapper around `fn` whose formals expose only
+#' the visible arguments, but which forwards the hidden defaults to `fn`
+#' as proper named arguments.
 #'
-#' Returning a function with only the *visible* arguments lets ellmer's
-#' formals-vs-arguments cross-check pass while keeping the hidden values
-#' invisible to the model.
+#' Why a wrapper at all: ellmer cross-checks `arguments` (the schema) with
+#' `formals(fun)`. Hidden arguments must not appear in either, or the
+#' model sees them.
+#'
+#' Why pass defaults as arguments instead of binding them in the
+#' enclosing environment: functions that introspect their own arguments
+#' (`missing()`, `match.call()`, `as.list(environment())`) only see
+#' *formal* arguments. Binding defaults in the wrapper's enclosing env
+#' makes them lexically visible but not introspectable, which silently
+#' breaks any function that uses those patterns. Passing them through
+#' [do.call()] keeps the same call semantics as
+#' `make_handler(fn, defaults)`.
 #'
 #' @param fn The original function.
 #' @param defaults Named list of pinned arguments.
-#' @return A function whose formals are the visible arguments only.
+#' @return A function whose formals are the visible arguments only. When
+#'   called it gathers the supplied arguments via [match.call()], merges
+#'   them under `defaults`, and invokes `fn` via [do.call()].
 #' @noRd
 wrap_fn_with_defaults <- function(fn, defaults) {
   if (length(defaults) == 0L) {
@@ -61,15 +72,23 @@ wrap_fn_with_defaults <- function(fn, defaults) {
   fmls <- formals(fn)
   visible_fmls <- fmls[!names(fmls) %in% names(defaults)]
 
-  new_fn <- fn
-  formals(new_fn) <- visible_fmls
-
   env <- new.env(parent = environment(fn))
-  for (nm in names(defaults)) {
-    assign(nm, defaults[[nm]], envir = env)
+  env$.autotool_fn_ <- fn
+  env$.autotool_defaults_ <- defaults
+
+  body_expr <- quote({
+    provided <- as.list(match.call())[-1L]
+    provided <- lapply(provided, function(.e) eval(.e, envir = parent.frame()))
+    return(do.call(
+      .autotool_fn_,
+      utils::modifyList(.autotool_defaults_, provided)
+    ))
+  })
+
+  if (length(visible_fmls) == 0L) {
+    return(as.function(list(body_expr), envir = env))
   }
-  environment(new_fn) <- env
-  return(new_fn)
+  return(as.function(c(as.pairlist(visible_fmls), list(body_expr)), envir = env))
 }
 
 #' Map one property schema (from the intermediate rep) to an ellmer type

@@ -70,3 +70,34 @@ test_that("unknown format value is rejected", {
     "'arg' should be one of"
   )
 })
+
+test_that("format = 'ellmer' forwards defaults as real arguments (missing() works)", {
+  skip_if_not_installed("ellmer")
+  fn <- function(x, api_key) {
+    if (missing(api_key)) {
+      return("missing")
+    }
+    return(paste(x, api_key))
+  }
+  tool <- generate_tool(
+    fn,
+    name = "fn",
+    defaults = list(api_key = "secret"),
+    format = "ellmer"
+  )
+  expect_equal(tool(x = "a"), "a secret")
+})
+
+test_that("format = 'ellmer' preserves match.call() inside the original fn", {
+  skip_if_not_installed("ellmer")
+  fn <- function(x, api_key) {
+    return(names(as.list(match.call())[-1L]))
+  }
+  tool <- generate_tool(
+    fn,
+    name = "fn",
+    defaults = list(api_key = "secret"),
+    format = "ellmer"
+  )
+  expect_setequal(tool(x = "hello"), c("x", "api_key"))
+})

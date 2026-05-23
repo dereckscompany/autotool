@@ -51,7 +51,8 @@
 #'   Pass `character()` to mark every argument optional.
 #' @param name Override the tool name. Defaults to the function name.
 #' @param description Override the tool description. Defaults to the
-#'   parsed documentation title.
+#'   parsed documentation title, or a stub like `"Call <fn>()."` when no
+#'   documentation title and no explicit override are available.
 #' @param format Output shape. One of `"openai"` (the default plain list)
 #'   or `"ellmer"` (an `ellmer::tool()` R6 object).
 #'
