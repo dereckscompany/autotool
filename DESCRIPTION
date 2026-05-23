@@ -1,5 +1,5 @@
 Package: autotool
-Title: autotool
+Title: Generate LLM Tool Definitions from R Functions
 Version: 0.0.0.9000
 URL: https://dereckscompany.github.io/autotool,
     https://github.com/dereckscompany/autotool
@@ -10,23 +10,22 @@ Authors@R:
            role = c("aut", "cre"),
            email = "dereck@mezquita.io",
            comment = c(ORCID = "0000-0002-9307-6762"))
-Description: What the package does.
+Description: Build OpenAI / Anthropic / DeepSeek tool definitions directly
+    from any R function by introspecting its signature plus its roxygen
+    or installed-package help. Hide implementation-detail arguments
+    (credentials, base URLs, retry budgets) so the model never sees them,
+    then inject them at call time. Zero hard runtime dependencies — only
+    base R and packages shipped with R.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.0)
 Suggests:
-    box,
-    ggplot2,
     knitr,
-    microbenchmark,
     pkgdown,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-LinkingTo:
-    Rcpp
-Imports:
-    Rcpp
-
