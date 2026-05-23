@@ -1,0 +1,22 @@
+{
+  "template": "https://github.com/dereckscompany/templates-cookiecutter.git",
+  "commit": "3af483e52946908c534fbe97c10e001209333909",
+  "checkout": "3af483e52946908c534fbe97c10e001209333909",
+  "context": {
+    "cookiecutter": {
+      "package_name": "autotool",
+      "package_title": "autotool",
+      "description": "What the package does.",
+      "author_given": "Dereck",
+      "author_family": "Mezquita",
+      "author_email": "dereck@mezquita.io",
+      "author_orcid": "0000-0002-9307-6762",
+      "github_org": "dereckscompany",
+      "license": "MIT",
+      "use_rcpp": true,
+      "_template": "https://github.com/dereckscompany/templates-cookiecutter.git",
+      "_commit": "3af483e52946908c534fbe97c10e001209333909"
+    }
+  },
+  "directory": "template-r-package"
+}
