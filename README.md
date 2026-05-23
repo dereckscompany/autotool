@@ -21,14 +21,14 @@ Zero hard dependencies — only base R and packages shipped with R.
 ## Install
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("dereckscompany/autotool")
+# install.packages("renv")
+renv::install("dereckscompany/autotool")
 ```
 
 ## Example
 
 ``` r
-library(autotool)
+box::use(autotool[generate_tool, make_handler])
 
 tool <- generate_tool(stats::rnorm)
 
@@ -87,6 +87,22 @@ For nested shapes (arrays of objects, etc.) that introspection cannot
 infer from R’s types, pass an explicit `schemas = list(arg = ...)`
 override. See `vignette("autotool")` for the full walkthrough.
 
-## License
+## ellmer compatibility
+
+`generate_tool()` returns the OpenAI / DeepSeek tool shape. It plugs
+directly into any OpenAI-compatible endpoint (DeepSeek, Mistral, local
+llama.cpp, vLLM, etc.).
+
+`ellmer`’s `tool()` doesn’t accept a raw JSON schema — it requires its
+own `type_*()` constructors. A small adapter bridges the two: take the
+descriptions and types `autotool` extracted for you, drop them into
+`ellmer::type_string()` / `type_integer()` / etc., and pass the result
+to `ellmer::tool()`. You still get the headline benefit — no manual
+schema authoring, descriptions pulled from `?fn` — and you slot cleanly
+into the standard tidyverse LLM client.
+
+A `vignette("autotool")` chapter shows the conversion in 20 lines.
+
+## Licence
 
 MIT. See `LICENSE`.

@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(autotool)
+box::use(autotool[generate_tool, make_handler])
 ```
 
 `autotool` generates an OpenAI / Anthropic / DeepSeek tool definition
@@ -28,6 +28,11 @@ This vignette walks through the four common situations:
 2. A function from your own source code with roxygen comments.
 3. Hiding implementation-detail arguments from the model.
 4. Overriding what introspection cannot see (complex types).
+
+It closes with a short adapter chapter showing how to slot the output
+into [`ellmer`](https://ellmer.tidyverse.org/), the tidyverse LLM
+client, which uses its own `type_*()` constructors instead of raw
+JSON schemas.
 
 ## 1. Wrapping a base-R function
 
@@ -207,6 +212,55 @@ tool_submit <- generate_tool(
 str(tool_submit$`function`$parameters$properties$decisions, max.level = 2)
 ```
 
+## 5. Plugging into ellmer
+
+`autotool` returns the OpenAI / DeepSeek tool shape. That format goes
+straight into any OpenAI-compatible endpoint (DeepSeek, Mistral,
+local llama.cpp, vLLM, etc.).
+
+[`ellmer`](https://ellmer.tidyverse.org/), the tidyverse LLM client,
+is the exception — its `tool()` function uses its own `type_*()`
+constructors rather than accepting a raw JSON schema. A 20-line
+adapter bridges the two so you still get autotool's auto-extracted
+descriptions while talking to ellmer.
+
+```{r ellmer-adapter, eval = FALSE}
+to_ellmer_type <- function(name, prop, required_set) {
+  ctor <- switch(
+    prop$type,
+    string = ellmer::type_string,
+    integer = ellmer::type_integer,
+    number = ellmer::type_number,
+    boolean = ellmer::type_boolean,
+    stop("Unsupported type for ellmer adapter: ", prop$type)
+  )
+  return(ctor(prop$description, required = name %in% required_set))
+}
+
+as_ellmer_tool <- function(fn, tool_def) {
+  props <- tool_def$`function`$parameters$properties
+  required_set <- unlist(tool_def$`function`$parameters$required)
+  args <- mapply(
+    to_ellmer_type,
+    names(props),
+    props,
+    MoreArgs = list(required_set = required_set),
+    SIMPLIFY = FALSE,
+    USE.NAMES = TRUE
+  )
+  return(ellmer::tool(fn, tool_def$`function`$description, arguments = args))
+}
+
+# Usage:
+ellmer_tool <- as_ellmer_tool(stats::rnorm, generate_tool(stats::rnorm))
+```
+
+This is a deliberate one-direction adapter — it doesn't try to handle
+the array-of-objects shapes from step 4, which ellmer's `type_*()`
+helpers don't directly express. For those cases pick whichever client
+you prefer: send the autotool schema raw to an OpenAI-compatible
+endpoint, or hand-write the ellmer arguments.
+
 ## Type-inference reference
 
 | Default value           | Inferred `type`                      |
@@ -218,12 +272,3 @@ str(tool_submit$`function`$parameters$properties$decisions, max.level = 2)
 | `1L`                    | `"integer"`                          |
 | `1.5` (or `1`, `0`)     | `"number"`                           |
 | `list(...)`             | `"object"` (use `schemas` for shape) |
-
-## Compatibility
-
-The output shape matches OpenAI's and DeepSeek's `tool` definitions and
-is accepted as-is by any OpenAI-compatible server. The inner
-`parameters` block is also what
-[`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)'s
-`arguments` argument expects — so `autotool` can complement `ellmer`
-rather than compete with it.

@@ -23,8 +23,11 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.0)
 Suggests:
+    box,
+    ellmer,
     knitr,
     pkgdown,
+    renv,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
