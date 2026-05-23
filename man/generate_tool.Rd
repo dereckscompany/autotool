@@ -9,8 +9,10 @@ generate_tool(
   defaults = list(),
   descriptions = list(),
   schemas = list(),
+  required = NULL,
   name = NULL,
-  description = NULL
+  description = NULL,
+  format = c("openai", "ellmer")
 )
 }
 \arguments{
@@ -24,69 +26,80 @@ inject at call time.}
 \item{schemas}{Named list of per-argument schema overrides (lists
 matching the OpenAPI property shape).}
 
+\item{required}{\code{NULL} (default) to auto-derive the required list
+from \code{formals(fn)} (arguments with no default are required), or a
+character vector specifying the exact required-argument names.
+Pass \code{character()} to mark every argument optional.}
+
 \item{name}{Override the tool name. Defaults to the function name.}
 
 \item{description}{Override the tool description. Defaults to the
-parsed documentation title, or a stub.}
+parsed documentation title, or a stub like \code{"Call <fn>()."} when no
+documentation title and no explicit override are available.}
+
+\item{format}{Output shape. One of \code{"openai"} (the default plain list)
+or \code{"ellmer"} (an \code{ellmer::tool()} R6 object).}
 }
 \value{
-A list ready to drop into a chat-completions request.
+A list (for \code{"openai"}) or an \code{ellmer} tool object (for
+\code{"ellmer"}).
 }
 \description{
-Produces an OpenAI- / DeepSeek-shaped tool definition list by
-introspecting \code{formals(fn)} for the argument shape and one of two
-documentation backends — roxygen-via-\code{srcref} for source-loaded
-functions, or Rd-via-\code{tools::Rd_db()} for installed packages — for
-descriptions.
+Builds a tool definition by introspecting \code{formals(fn)} for the argument
+shape and one of two documentation backends — roxygen-via-\code{srcref} for
+source-loaded functions, or Rd-via-\code{tools::Rd_db()} for installed
+packages — for descriptions.
 }
 \details{
-The shape returned is the union schema accepted by OpenAI, DeepSeek,
-and most OpenAI-compatible servers:
+The output \code{format} controls the wire shape:
+\itemize{
+\item \code{"openai"} (default) returns a plain list matching OpenAI's
+chat-completions \code{tool} schema. Accepted as-is by any
+OpenAI-compatible server (DeepSeek, Mistral, vLLM, llama.cpp,
+etc.).
+\item \code{"ellmer"} returns an \code{\link[ellmer:tool]{ellmer::tool()}} R6 object
+ready to register with an \verb{ellmer::chat_*()} session. Requires
+the \code{ellmer} package.
+}
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{list(
-  type = "function",
-  `function` = list(
-    name        = "...",
-    description = "...",
-    parameters  = list(
-      type       = "object",
-      properties = list(...),
-      required   = list("...")
-    )
-  )
-)
-}\if{html}{\out{</div>}}
-
-Anthropic's tool format uses the inner \code{parameters} block under a
-different key (\code{input_schema}) — wrap accordingly when targeting it.
+The introspection happens once regardless of format; only the final
+wrapper differs.
 \subsection{Hiding implementation-detail arguments}{
 
 The headline feature is \code{defaults}. Any argument named there is
-removed from the schema the model sees. Pair it with \code{\link[=make_handler]{make_handler()}}
-to build a dispatch closure that merges those values back in at call
-time. This is the right place to pin API keys, base URLs, retry
-budgets, or anything the model should not influence.
+removed from the schema the model sees. With \code{format = "openai"},
+pair with \code{\link[=make_handler]{make_handler()}} to merge those values back in when you
+dispatch the model's tool call. With \code{format = "ellmer"}, the
+returned tool object already wraps the function so defaults are
+injected automatically.
 }
 
-\subsection{Overrides}{
+\subsection{Overriding what introspection sees}{
 \itemize{
-\item \code{descriptions} overrides the per-argument description text
-(useful when the installed docs are too terse for an LLM).
-\item \code{schemas} overrides the full schema for one or more arguments
-(necessary for arrays-of-objects and other nested shapes that
-introspection cannot infer).
+\item \code{descriptions = list(arg = "...")} overrides per-argument
+description text — useful when installed-package docs are too
+terse for an LLM.
+\item \code{schemas = list(arg = list(...))} overrides the full schema for
+one or more arguments — necessary for arrays-of-objects and
+other nested shapes R's lack of static types cannot infer.
+\item \code{required} overrides the auto-derived required-arg list:
+\code{NULL} (default) derives it from \code{formals()}; a character
+vector replaces the derived list entirely.
 }
 }
 }
 \examples{
-tool <- generate_tool(
-  stats::rnorm,
-  descriptions = list(n = "Number of values to draw.")
-)
+# Default OpenAI / DeepSeek shape
+tool <- generate_tool(stats::rnorm)
 tool$`function`$name
-tool$`function`$parameters$properties$mean
+unlist(tool$`function`$parameters$required)
+
+# Override the required-arg list
+tool <- generate_tool(stats::rnorm, required = character())
+unlist(tool$`function`$parameters$required) # character(0) — nothing required
 
 }
 \seealso{
-\code{\link[=make_handler]{make_handler()}} for the matching runtime helper.
+\code{\link[=make_handler]{make_handler()}} for the matching runtime helper when using
+\code{format = "openai"}.
 }
