@@ -14,19 +14,16 @@ navbar:
       aria-label: GitHub repository
 
 reference:
-  - title: R Functions
-    desc: Pure R functions
+  - title: Tool definitions
+    desc: >
+      Build an LLM tool definition from any R function by introspecting
+      its signature and documentation.
     contents:
-      - add
+      - generate_tool
 
-  - title: Rcpp Functions
-    desc: High-performance C++ functions
+  - title: Runtime dispatch
+    desc: >
+      Invoke a function from a model-supplied argument list, with hidden
+      defaults merged in.
     contents:
-      - sum_array_cpp
-
-
-articles:
-  - title: Getting Started
-    navbar: ~
-    contents:
-      - demo
+      - call_with_defaults

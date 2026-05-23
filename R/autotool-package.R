@@ -1,0 +1,16 @@
+#' autotool: Generate LLM Tool Definitions from R Functions
+#'
+#' Build OpenAI / Anthropic / DeepSeek tool definitions directly from any
+#' R function by introspecting its signature plus its roxygen or installed
+#' package help. Hide implementation-detail arguments (credentials, base
+#' URLs, retry budgets) so the model never sees them, then inject them at
+#' call time.
+#'
+#' The package has two entry points:
+#'
+#'   * [generate_tool()] turns a function into a tool definition list.
+#'   * [call_with_defaults()] dispatches a model-supplied argument list,
+#'     after merging in the hidden defaults you pinned at definition time.
+#'
+#' @keywords internal
+"_PACKAGE"
