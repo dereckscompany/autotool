@@ -69,8 +69,7 @@ supplied the argument shape and the `required` list.
 
 The headline feature. Pin credentials, base URLs, or any
 implementation detail with `defaults` — those arguments disappear from
-the schema the model sees, and are merged back in at call time via
-[`call_with_defaults()`](reference/call_with_defaults.html):
+the schema the model sees:
 
 ```r
 tool <- generate_tool(
@@ -79,6 +78,22 @@ tool <- generate_tool(
 )
 # The model only sees the trading-relevant args (symbols, start, ...).
 ```
+
+Build a handler closure with the same defaults to invoke when the
+model dispatches the tool call:
+
+```r
+handle_fetch_quotes <- make_handler(
+  fetch_quotes,
+  defaults = list(api_key = SECRET, base_url = PROD, retries = 5L)
+)
+handle_fetch_quotes(model_args)
+```
+
+Plug the closure into your own handler registry and dispatch by name
+in your agent loop. If you need post-processing — caching, logging,
+result munging — just write your own 1-arg function; the factory is a
+convenience, not a requirement.
 
 For nested shapes (arrays of objects, etc.) that introspection cannot
 infer from R's types, pass an explicit `schemas = list(arg = ...)`

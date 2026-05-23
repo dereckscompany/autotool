@@ -30,10 +30,10 @@
 #' ## Hiding implementation-detail arguments
 #'
 #' The headline feature is `defaults`. Any argument named there is
-#' removed from the schema the model sees, and [call_with_defaults()]
-#' merges those values back in at call time. This is the right place
-#' to pin API keys, base URLs, retry budgets, or anything the model
-#' should not influence.
+#' removed from the schema the model sees. Pair it with [make_handler()]
+#' to build a dispatch closure that merges those values back in at call
+#' time. This is the right place to pin API keys, base URLs, retry
+#' budgets, or anything the model should not influence.
 #'
 #' ## Overrides
 #'
@@ -55,7 +55,7 @@
 #'
 #' @return A list ready to drop into a chat-completions request.
 #'
-#' @seealso [call_with_defaults()] for the matching runtime helper.
+#' @seealso [make_handler()] for the matching runtime helper.
 #'
 #' @examples
 #' tool <- generate_tool(

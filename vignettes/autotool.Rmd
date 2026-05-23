@@ -135,25 +135,32 @@ tool_quotes <- generate_tool(
 names(tool_quotes$`function`$parameters$properties)
 ```
 
-The model sees only `symbols`, `start`, `end`. When it emits a tool
-call, dispatch it through `call_with_defaults()`:
+The model sees only `symbols`, `start`, `end`. Build a handler once
+with `make_handler()` and call it whenever the model dispatches:
 
 ```{r}
-model_emitted <- list(symbols = c("AAPL", "NVDA"), start = "2026-04-01")
-
-call_with_defaults(
+handle_fetch_quotes <- make_handler(
   fetch_quotes,
-  model_args = model_emitted,
   defaults = list(
     api_key = "sk-not-shown-to-model",
     base_url = "https://example.com",
     retries = 5L
   )
 )
+
+# When the model emits a tool call, parse its arguments and call:
+model_emitted <- list(symbols = c("AAPL", "NVDA"), start = "2026-04-01")
+handle_fetch_quotes(model_emitted)
 ```
 
 The pinned values are merged in before the function runs. The model
-never sees the key.
+never sees the key. Plug the closure into your own handler registry
+(e.g., `TOOL_HANDLERS <- list(fetch_quotes = handle_fetch_quotes)`)
+and dispatch by name in your agent loop.
+
+If you need post-processing — caching, result truncation, logging —
+just write a regular 1-arg function instead of using `make_handler()`.
+The factory is a convenience, not a requirement.
 
 ## 4. Overriding what introspection cannot see
 
