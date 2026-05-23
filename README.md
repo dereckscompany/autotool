@@ -29,10 +29,9 @@ ellmer::tool(
   stats::rnorm,
   "The Normal Distribution",
   arguments = list(
-    n    = ellmer::type_integer("Number of observations..."),
+    n = ellmer::type_integer("Number of observations..."),
     mean = ellmer::type_number("Vector of means.", required = FALSE),
-    sd   = ellmer::type_number("Vector of standard deviations.",
-                               required = FALSE)
+    sd = ellmer::type_number("Vector of standard deviations.", required = FALSE)
   )
 )
 

@@ -27,8 +27,7 @@
 #' @param description Tool-level description override.
 #' @return A list as described above.
 #' @noRd
-introspect <- function(fn, fn_name, defaults, descriptions, schemas,
-                       required, description) {
+introspect <- function(fn, fn_name, defaults, descriptions, schemas, required, description) {
   docs <- get_docs(fn, fn_name)
   fmls <- formals(fn)
   fmls_names <- setdiff(names(fmls), "...")
