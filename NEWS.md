@@ -1,8 +1,6 @@
-# autotool (development version)
+# autotool 0.0.1
 
-Pre-release. No published versions yet.
-
-## Initial implementation
+Initial public release.
 
 * `generate_tool()` builds an OpenAI / Anthropic / DeepSeek tool definition
   from any R function by introspecting `formals()` and pulling argument

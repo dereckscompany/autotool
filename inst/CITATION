@@ -1,17 +1,26 @@
 citHeader("To cite autotool in publications use:")
 
+year <- if (!is.null(meta$Date) && nzchar(meta$Date)) {
+  sub("-.*", "", meta$Date)
+} else {
+  format(Sys.Date(), "%Y")
+}
+title <- sprintf("%s: %s", meta$Package, meta$Title)
+note <- sprintf("R package version %s", meta$Version)
+url <- "https://github.com/dereckscompany/autotool"
+
 bibentry(
   bibtype  = "Manual",
-  title    = "autotool: autotool",
+  title    = title,
   author   = person("Dereck", "Mezquita", comment = c(ORCID = "0000-0002-9307-6762")),
-  year     = "2026",
-  note     = "R package version 0.0.0.9000",
-  url      = "https://github.com/dereckscompany/autotool",
-  key      = "autotool-2026",
-  textVersion = paste(
-    "Mezquita, D. (2026).",
-    "autotool: autotool.",
-    "R package version 0.0.0.9000.",
-    "Available at https://github.com/dereckscompany/autotool"
+  year     = year,
+  note     = note,
+  url      = url,
+  key      = sprintf("%s-%s", meta$Package, year),
+  textVersion = paste0(
+    "Mezquita, D. (", year, "). ",
+    title, ". ",
+    note, ". ",
+    "Available at ", url
   )
 )
