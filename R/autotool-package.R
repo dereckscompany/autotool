@@ -9,8 +9,9 @@
 #' The package has two entry points:
 #'
 #'   * [generate_tool()] turns a function into a tool definition list.
-#'   * [call_with_defaults()] dispatches a model-supplied argument list,
-#'     after merging in the hidden defaults you pinned at definition time.
+#'   * [make_handler()] builds a 1-argument closure that merges your
+#'     pinned defaults with the model-supplied arguments and invokes
+#'     the underlying function.
 #'
 #' @keywords internal
 "_PACKAGE"

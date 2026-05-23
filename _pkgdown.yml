@@ -23,7 +23,7 @@ reference:
 
   - title: Runtime dispatch
     desc: >
-      Invoke a function from a model-supplied argument list, with hidden
-      defaults merged in.
+      Build a handler closure that merges hidden defaults with the
+      model's supplied arguments and invokes the function.
     contents:
-      - call_with_defaults
+      - make_handler

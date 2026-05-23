@@ -62,10 +62,10 @@ different key (\code{input_schema}) — wrap accordingly when targeting it.
 \subsection{Hiding implementation-detail arguments}{
 
 The headline feature is \code{defaults}. Any argument named there is
-removed from the schema the model sees, and \code{\link[=call_with_defaults]{call_with_defaults()}}
-merges those values back in at call time. This is the right place
-to pin API keys, base URLs, retry budgets, or anything the model
-should not influence.
+removed from the schema the model sees. Pair it with \code{\link[=make_handler]{make_handler()}}
+to build a dispatch closure that merges those values back in at call
+time. This is the right place to pin API keys, base URLs, retry
+budgets, or anything the model should not influence.
 }
 
 \subsection{Overrides}{
@@ -88,5 +88,5 @@ tool$`function`$parameters$properties$mean
 
 }
 \seealso{
-\code{\link[=call_with_defaults]{call_with_defaults()}} for the matching runtime helper.
+\code{\link[=make_handler]{make_handler()}} for the matching runtime helper.
 }

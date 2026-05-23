@@ -16,8 +16,9 @@ call time.
 The package has two entry points:
 \itemize{
 \item \code{\link[=generate_tool]{generate_tool()}} turns a function into a tool definition list.
-\item \code{\link[=call_with_defaults]{call_with_defaults()}} dispatches a model-supplied argument list,
-after merging in the hidden defaults you pinned at definition time.
+\item \code{\link[=make_handler]{make_handler()}} builds a 1-argument closure that merges your
+pinned defaults with the model-supplied arguments and invokes
+the underlying function.
 }
 }
 \seealso{
