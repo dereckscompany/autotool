@@ -35,11 +35,14 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.1" id="autotool-001">autotool 0.0.1<a class="anchor" aria-label="anchor" href="#autotool-001"></a></h2>
 <p>Initial public release.</p>
-<ul><li><p><code><a href="../reference/generate_tool.html">generate_tool()</a></code> builds an OpenAI / Anthropic / DeepSeek tool definition from any R function by introspecting <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> and pulling argument descriptions from either roxygen comments (via <code>srcref</code>) or installed- package help (via <code><a href="https://rdrr.io/r/tools/Rdutils.html" class="external-link">tools::Rd_db()</a></code>).</p></li>
-<li><p><code><a href="../reference/make_handler.html">make_handler()</a></code> returns a 1-argument closure that merges hidden defaults with the model’s tool-call arguments and dispatches to the underlying function. Drop it into your own handler registry.</p></li>
-<li><p><code>defaults = list(...)</code> on <code><a href="../reference/generate_tool.html">generate_tool()</a></code> hides arguments from the schema the model sees — the right place to pin API keys, base URLs, or any implementation detail.</p></li>
-<li><p><code>schemas = list(...)</code> lets you override the inferred schema for any argument (required for arrays-of-objects and other shapes R’s lack of static types cannot express).</p></li>
-<li><p>Zero hard runtime dependencies — only base R.</p></li>
+<ul><li><p><code><a href="../reference/generate_tool.html">generate_tool()</a></code> builds an LLM tool definition from any R function by introspecting <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> and pulling argument descriptions from either roxygen comments (via <code>srcref</code>) or installed-package help (via <code><a href="https://rdrr.io/r/tools/Rdutils.html" class="external-link">tools::Rd_db()</a></code>).</p></li>
+<li><p><code>format</code> argument selects the output shape: <code>"openai"</code> (default) returns a plain list matching OpenAI / DeepSeek / any OpenAI-compatible server; <code>"ellmer"</code> returns an <code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> R6 object ready to register with the tidyverse ellmer LLM client.</p></li>
+<li><p><code>defaults = list(...)</code> hides arguments from the schema the model sees — the right place to pin API keys, base URLs, or any implementation detail. Works for both output formats; for <code>"ellmer"</code> the hidden arguments are stripped from the wrapped function’s visible formals.</p></li>
+<li><p><code>required</code> argument overrides the auto-derived required-arg list: <code>NULL</code> (default) derives it from <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code>, a character vector replaces it explicitly, <code><a href="https://rdrr.io/r/base/character.html" class="external-link">character()</a></code> marks every argument optional.</p></li>
+<li><p><code>descriptions = list(...)</code> overrides per-argument description text when installed docs are too terse.</p></li>
+<li><p><code>schemas = list(...)</code> overrides the full per-argument schema — required for arrays-of-objects and other nested shapes R’s lack of static types cannot express.</p></li>
+<li><p><code><a href="../reference/make_handler.html">make_handler()</a></code> returns a 1-argument closure that merges hidden defaults with the model’s tool-call arguments and dispatches to the underlying function. Drop it into your own handler registry when using <code>format = "openai"</code>.</p></li>
+<li><p>Zero hard runtime dependencies — only base R. <code>ellmer</code>, <code>box</code>, and <code>renv</code> are in <code>Suggests</code> for the format-conversion and vignette paths.</p></li>
 </ul></div>
   </main></div>
 

@@ -1,9 +1,8 @@
 # Generate an LLM tool definition from an R function
 
-Produces an OpenAI- / DeepSeek-shaped tool definition list by
-introspecting `formals(fn)` for the argument shape and one of two
-documentation backends — roxygen-via-`srcref` for source-loaded
-functions, or
+Builds a tool definition by introspecting `formals(fn)` for the argument
+shape and one of two documentation backends — roxygen-via-`srcref` for
+source-loaded functions, or
 Rd-via-[`tools::Rd_db()`](https://rdrr.io/r/tools/Rdutils.html) for
 installed packages — for descriptions.
 
@@ -15,8 +14,10 @@ generate_tool(
   defaults = list(),
   descriptions = list(),
   schemas = list(),
+  required = NULL,
   name = NULL,
-  description = NULL
+  description = NULL,
+  format = c("openai", "ellmer")
 )
 ```
 
@@ -40,6 +41,14 @@ generate_tool(
   Named list of per-argument schema overrides (lists matching the
   OpenAPI property shape).
 
+- required:
+
+  `NULL` (default) to auto-derive the required list from `formals(fn)`
+  (arguments with no default are required), or a character vector
+  specifying the exact required-argument names. Pass
+  [`character()`](https://rdrr.io/r/base/character.html) to mark every
+  argument optional.
+
 - name:
 
   Override the tool name. Defaults to the function name.
@@ -47,73 +56,76 @@ generate_tool(
 - description:
 
   Override the tool description. Defaults to the parsed documentation
-  title, or a stub.
+  title, or a stub like `"Call <fn>()."` when no documentation title and
+  no explicit override are available.
+
+- format:
+
+  Output shape. One of `"openai"` (the default plain list) or `"ellmer"`
+  (an
+  [`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)
+  R6 object).
 
 ## Value
 
-A list ready to drop into a chat-completions request.
+A list (for `"openai"`) or an `ellmer` tool object (for `"ellmer"`).
 
 ## Details
 
-The shape returned is the union schema accepted by OpenAI, DeepSeek, and
-most OpenAI-compatible servers:
+The output `format` controls the wire shape:
 
-    list(
-      type = "function",
-      `function` = list(
-        name        = "...",
-        description = "...",
-        parameters  = list(
-          type       = "object",
-          properties = list(...),
-          required   = list("...")
-        )
-      )
-    )
+- `"openai"` (default) returns a plain list matching OpenAI's
+  chat-completions `tool` schema. Accepted as-is by any
+  OpenAI-compatible server (DeepSeek, Mistral, vLLM, llama.cpp, etc.).
 
-Anthropic's tool format uses the inner `parameters` block under a
-different key (`input_schema`) — wrap accordingly when targeting it.
+- `"ellmer"` returns an
+  [`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)
+  R6 object ready to register with an `ellmer::chat_*()` session.
+  Requires the `ellmer` package.
+
+The introspection happens once regardless of format; only the final
+wrapper differs.
 
 ### Hiding implementation-detail arguments
 
 The headline feature is `defaults`. Any argument named there is removed
-from the schema the model sees. Pair it with
+from the schema the model sees. With `format = "openai"`, pair with
 [`make_handler()`](https://dereckscompany.github.io/autotool/reference/make_handler.md)
-to build a dispatch closure that merges those values back in at call
-time. This is the right place to pin API keys, base URLs, retry budgets,
-or anything the model should not influence.
+to merge those values back in when you dispatch the model's tool call.
+With `format = "ellmer"`, the returned tool object already wraps the
+function so defaults are injected automatically.
 
-### Overrides
+### Overriding what introspection sees
 
-- `descriptions` overrides the per-argument description text (useful
-  when the installed docs are too terse for an LLM).
+- `descriptions = list(arg = "...")` overrides per-argument description
+  text — useful when installed-package docs are too terse for an LLM.
 
-- `schemas` overrides the full schema for one or more arguments
-  (necessary for arrays-of-objects and other nested shapes that
-  introspection cannot infer).
+- `schemas = list(arg = list(...))` overrides the full schema for one or
+  more arguments — necessary for arrays-of-objects and other nested
+  shapes R's lack of static types cannot infer.
+
+- `required` overrides the auto-derived required-arg list: `NULL`
+  (default) derives it from
+  [`formals()`](https://rdrr.io/r/base/formals.html); a character vector
+  replaces the derived list entirely.
 
 ## See also
 
 [`make_handler()`](https://dereckscompany.github.io/autotool/reference/make_handler.md)
-for the matching runtime helper.
+for the matching runtime helper when using `format = "openai"`.
 
 ## Examples
 
 ``` r
-tool <- generate_tool(
-  stats::rnorm,
-  descriptions = list(n = "Number of values to draw.")
-)
+# Default OpenAI / DeepSeek shape
+tool <- generate_tool(stats::rnorm)
 tool$`function`$name
 #> [1] "rnorm"
-tool$`function`$parameters$properties$mean
-#> $type
-#> [1] "number"
-#> 
-#> $default
-#> [1] 0
-#> 
-#> $description
-#> [1] "vector of means."
-#> 
+unlist(tool$`function`$parameters$required)
+#> [1] "n"
+
+# Override the required-arg list
+tool <- generate_tool(stats::rnorm, required = character())
+unlist(tool$`function`$parameters$required) # character(0) — nothing required
+#> NULL
 ```

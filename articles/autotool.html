@@ -60,17 +60,22 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dereckscompany.github.io/autotool">autotool</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">box</span><span class="fu">::</span><span class="fu"><a href="https://klmr.me/box/reference/use.html" class="external-link">use</a></span><span class="op">(</span><span class="va">autotool</span><span class="op">)</span></span></code></pre></div>
+<p>Throughout this vignette, package functions are accessed via
+<code>autotool$generate_tool(...)</code> and
+<code>autotool$make_handler(...)</code>.</p>
 <p><code>autotool</code> generates an OpenAI / Anthropic / DeepSeek tool
 definition from any R function by reading its signature and its
-documentation. This vignette walks through the four common
-situations:</p>
+documentation. This vignette walks through:</p>
 <ol style="list-style-type: decimal">
 <li>A base-R function whose docs ship in installed <code>.Rd</code>
 files.</li>
-<li>A function from your own source code with roxygen comments.</li>
+<li>A function from your own source with roxygen comments.</li>
 <li>Hiding implementation-detail arguments from the model.</li>
 <li>Overriding what introspection cannot see (complex types).</li>
+<li>Choosing an output format — OpenAI shape (default) or an
+<code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> object via
+<code>format = "ellmer"</code>.</li>
 </ol>
 <div class="section level2">
 <h2 id="wrapping-a-base-r-function">1. Wrapping a base-R function<a class="anchor" aria-label="anchor" href="#wrapping-a-base-r-function"></a>
@@ -78,7 +83,7 @@ files.</li>
 <p><code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">stats::rnorm</a></code> has installed help; <code>autotool</code>
 pulls the title and per-argument descriptions straight from there.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tool_rnorm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_tool.html">generate_tool</a></span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">tool_rnorm</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">)</span></span>
 <span><span class="va">tool_rnorm</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">name</span></span>
 <span><span class="co">#&gt; [1] "rnorm"</span></span>
 <span><span class="va">tool_rnorm</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">description</span></span>
@@ -105,9 +110,11 @@ schema:</p>
 <p><code>n</code> has no default and R has no static types, so it falls
 back to <code>"string"</code>. Override that with <code>schemas</code>
 (shown in step 4) or supply a better description with
-<code>descriptions</code>:</p>
+<code>descriptions</code>. You can also override the required-arg list
+explicitly with <code>required = c(...)</code> — pass
+<code><a href="https://rdrr.io/r/base/character.html" class="external-link">character()</a></code> to mark every argument optional.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tool_rnorm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_tool.html">generate_tool</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">tool_rnorm</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span></span>
 <span>  <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span>,</span>
 <span>  descriptions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n <span class="op">=</span> <span class="st">"Number of random values to draw."</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -123,7 +130,7 @@ back to <code>"string"</code>. Override that with <code>schemas</code>
 </h2>
 <p>When a function is loaded from a source file (via
 <code><a href="https://rdrr.io/r/base/source.html" class="external-link">source()</a></code>, <code><a href="https://rdrr.io/r/base/sys.source.html" class="external-link">sys.source()</a></code>,
-<code>devtools::load_all()</code>, or <code>box::use()</code>), its
+<code>devtools::load_all()</code>, or <code><a href="https://klmr.me/box/reference/use.html" class="external-link">box::use()</a></code>), its
 <code>srcref</code> attribute records the file. <code>autotool</code>
 reads the <code>#'</code> comments above the definition directly — no
 <code>roxygen2</code> dependency.</p>
@@ -142,7 +149,7 @@ reads the <code>#'</code> comments above the definition directly — no
 <span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sys.source.html" class="external-link">sys.source</a></span><span class="op">(</span><span class="va">tmp</span>, envir <span class="op">=</span> <span class="va">env</span>, keep.source <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tool_multiply</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_tool.html">generate_tool</a></span><span class="op">(</span><span class="va">env</span><span class="op">$</span><span class="va">multiply</span>, name <span class="op">=</span> <span class="st">"multiply"</span><span class="op">)</span></span>
+<span><span class="va">tool_multiply</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span><span class="va">env</span><span class="op">$</span><span class="va">multiply</span>, name <span class="op">=</span> <span class="st">"multiply"</span><span class="op">)</span></span>
 <span><span class="va">tool_multiply</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">description</span></span>
 <span><span class="co">#&gt; [1] "Multiply two numbers together."</span></span>
 <span><span class="va">tool_multiply</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">parameters</span><span class="op">$</span><span class="va">properties</span><span class="op">$</span><span class="va">a</span><span class="op">$</span><span class="va">description</span></span>
@@ -151,8 +158,8 @@ reads the <code>#'</code> comments above the definition directly — no
 <div class="section level2">
 <h2 id="hiding-credentials-and-other-infra-arguments">3. Hiding credentials and other infra arguments<a class="anchor" aria-label="anchor" href="#hiding-credentials-and-other-infra-arguments"></a>
 </h2>
-<p>This is the headline feature. Suppose you want to expose a real
-trading function to a model but keep its <code>api_key</code>,
+<p>This is the headline feature. Suppose you want to expose a trading
+function to a model but keep its <code>api_key</code>,
 <code>base_url</code>, and retry budget pinned on your side.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fetch_quotes</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span></span>
@@ -166,7 +173,7 @@ trading function to a model but keep its <code>api_key</code>,
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>symbols <span class="op">=</span> <span class="va">symbols</span>, start <span class="op">=</span> <span class="va">start</span>, end <span class="op">=</span> <span class="va">end</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">tool_quotes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_tool.html">generate_tool</a></span><span class="op">(</span></span>
+<span><span class="va">tool_quotes</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span></span>
 <span>  <span class="va">fetch_quotes</span>,</span>
 <span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    api_key  <span class="op">=</span> <span class="st">"sk-not-shown-to-model"</span>,</span>
@@ -195,7 +202,7 @@ trading function to a model but keep its <code>api_key</code>,
 <code>end</code>. Build a handler once with <code><a href="../reference/make_handler.html">make_handler()</a></code>
 and call it whenever the model dispatches:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">handle_fetch_quotes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_handler.html">make_handler</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">handle_fetch_quotes</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">make_handler</span><span class="op">(</span></span>
 <span>  <span class="va">fetch_quotes</span>,</span>
 <span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    api_key <span class="op">=</span> <span class="st">"sk-not-shown-to-model"</span>,</span>
@@ -214,7 +221,7 @@ and call it whenever the model dispatches:</p>
 <span><span class="co">#&gt; [1] "2026-04-01"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $end</span></span>
-<span><span class="co">#&gt; [1] "2026-05-23 18:37:28 UTC"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "2026-05-23 23:35:41 UTC"</span></span></code></pre></div>
 <p>The pinned values are merged in before the function runs. The model
 never sees the key. Plug the closure into your own handler registry
 (e.g.,
@@ -235,7 +242,7 @@ supply a full schema yourself via <code>schemas</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">submit_trades</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">decisions</span>, <span class="va">memo</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tool_submit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_tool.html">generate_tool</a></span><span class="op">(</span></span>
+<span><span class="va">tool_submit</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span></span>
 <span>  <span class="va">submit_trades</span>,</span>
 <span>  description <span class="op">=</span> <span class="st">"Submit a batch of trade decisions for execution."</span>,</span>
 <span>  schemas <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -274,6 +281,76 @@ supply a full schema yourself via <code>schemas</code>:</p>
 <span><span class="co">#&gt;   ..$ type      : chr "object"</span></span>
 <span><span class="co">#&gt;   ..$ properties:List of 3</span></span>
 <span><span class="co">#&gt;   ..$ required  :List of 3</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="choosing-an-output-format">5. Choosing an output format<a class="anchor" aria-label="anchor" href="#choosing-an-output-format"></a>
+</h2>
+<p><code>autotool</code> returns the OpenAI / DeepSeek tool shape by
+default. That format drops straight into any OpenAI-compatible endpoint
+(DeepSeek, Mistral, vLLM, llama.cpp, etc.).</p>
+<p>For <a href="https://ellmer.tidyverse.org/" class="external-link"><code>ellmer</code></a>,
+the tidyverse LLM client, pass <code>format = "ellmer"</code> to get an
+<code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> object ready to register on a chat session.
+The introspection (descriptions, types, required-arg list) is identical
+— only the wrapper changes.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ellmer_tool</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span></span>
+<span>  <span class="va">fetch_quotes</span>,</span>
+<span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    api_key  <span class="op">=</span> <span class="st">"sk-not-shown-to-model"</span>,</span>
+<span>    base_url <span class="op">=</span> <span class="st">"https://example.com"</span>,</span>
+<span>    retries  <span class="op">=</span> <span class="fl">5L</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  format <span class="op">=</span> <span class="st">"ellmer"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Plug into an ellmer chat session:</span></span>
+<span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_openai.html" class="external-link">chat_openai</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">register_tool</span><span class="op">(</span><span class="va">ellmer_tool</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">chat</span><span class="op">(</span><span class="st">"Check quotes for AAPL and NVDA."</span><span class="op">)</span></span></code></pre></div>
+<p><code>defaults</code> still works with <code>format = "ellmer"</code>
+— autotool strips the hidden arguments from the wrapped function’s
+visible formals and binds them as locals, so ellmer never sees them and
+the model can’t supply them.</p>
+<p><code>format = "ellmer"</code> covers strings, integers, numbers,
+booleans, enums, arrays, and objects — recursively. The map is:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Property type</th>
+<th>ellmer constructor</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>string</code></td>
+<td><code>type_string()</code></td>
+</tr>
+<tr class="even">
+<td>string + <code>enum</code>
+</td>
+<td><code>type_enum()</code></td>
+</tr>
+<tr class="odd">
+<td><code>integer</code></td>
+<td><code>type_integer()</code></td>
+</tr>
+<tr class="even">
+<td><code>number</code></td>
+<td><code>type_number()</code></td>
+</tr>
+<tr class="odd">
+<td><code>boolean</code></td>
+<td><code>type_boolean()</code></td>
+</tr>
+<tr class="even">
+<td><code>array</code></td>
+<td><code>type_array()</code></td>
+</tr>
+<tr class="odd">
+<td><code>object</code></td>
+<td><code>type_object()</code></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="type-inference-reference">Type-inference reference<a class="anchor" aria-label="anchor" href="#type-inference-reference"></a>
@@ -324,15 +401,6 @@ supply a full schema yourself via <code>schemas</code>:</p>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section level2">
-<h2 id="compatibility">Compatibility<a class="anchor" aria-label="anchor" href="#compatibility"></a>
-</h2>
-<p>The output shape matches OpenAI’s and DeepSeek’s <code>tool</code>
-definitions and is accepted as-is by any OpenAI-compatible server. The
-inner <code>parameters</code> block is also what <a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link"><code>ellmer::tool()</code></a>’s
-<code>arguments</code> argument expects — so <code>autotool</code> can
-complement <code>ellmer</code> rather than compete with it.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

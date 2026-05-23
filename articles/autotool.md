@@ -2,17 +2,23 @@
 
 ``` r
 
-library(autotool)
+box::use(autotool)
 ```
+
+Throughout this vignette, package functions are accessed via
+`autotool$generate_tool(...)` and `autotool$make_handler(...)`.
 
 `autotool` generates an OpenAI / Anthropic / DeepSeek tool definition
 from any R function by reading its signature and its documentation. This
-vignette walks through the four common situations:
+vignette walks through:
 
 1.  A base-R function whose docs ship in installed `.Rd` files.
-2.  A function from your own source code with roxygen comments.
+2.  A function from your own source with roxygen comments.
 3.  Hiding implementation-detail arguments from the model.
 4.  Overriding what introspection cannot see (complex types).
+5.  Choosing an output format — OpenAI shape (default) or an
+    [`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)
+    object via `format = "ellmer"`.
 
 ## 1. Wrapping a base-R function
 
@@ -22,7 +28,7 @@ from there.
 
 ``` r
 
-tool_rnorm <- generate_tool(stats::rnorm)
+tool_rnorm <- autotool$generate_tool(stats::rnorm)
 tool_rnorm$`function`$name
 #> [1] "rnorm"
 tool_rnorm$`function`$description
@@ -55,11 +61,14 @@ tool_rnorm$`function`$parameters$properties$mean
 
 `n` has no default and R has no static types, so it falls back to
 `"string"`. Override that with `schemas` (shown in step 4) or supply a
-better description with `descriptions`:
+better description with `descriptions`. You can also override the
+required-arg list explicitly with `required = c(...)` — pass
+[`character()`](https://rdrr.io/r/base/character.html) to mark every
+argument optional.
 
 ``` r
 
-tool_rnorm <- generate_tool(
+tool_rnorm <- autotool$generate_tool(
   stats::rnorm,
   descriptions = list(n = "Number of random values to draw.")
 )
@@ -76,9 +85,10 @@ tool_rnorm$`function`$parameters$properties$n
 When a function is loaded from a source file (via
 [`source()`](https://rdrr.io/r/base/source.html),
 [`sys.source()`](https://rdrr.io/r/base/sys.source.html),
-`devtools::load_all()`, or `box::use()`), its `srcref` attribute records
-the file. `autotool` reads the `#'` comments above the definition
-directly — no `roxygen2` dependency.
+`devtools::load_all()`, or
+[`box::use()`](https://klmr.me/box/reference/use.html)), its `srcref`
+attribute records the file. `autotool` reads the `#'` comments above the
+definition directly — no `roxygen2` dependency.
 
 ``` r
 
@@ -96,7 +106,7 @@ writeLines(
 env <- new.env()
 sys.source(tmp, envir = env, keep.source = TRUE)
 
-tool_multiply <- generate_tool(env$multiply, name = "multiply")
+tool_multiply <- autotool$generate_tool(env$multiply, name = "multiply")
 tool_multiply$`function`$description
 #> [1] "Multiply two numbers together."
 tool_multiply$`function`$parameters$properties$a$description
@@ -105,7 +115,7 @@ tool_multiply$`function`$parameters$properties$a$description
 
 ## 3. Hiding credentials and other infra arguments
 
-This is the headline feature. Suppose you want to expose a real trading
+This is the headline feature. Suppose you want to expose a trading
 function to a model but keep its `api_key`, `base_url`, and retry budget
 pinned on your side.
 
@@ -122,7 +132,7 @@ fetch_quotes <- function(
   return(list(symbols = symbols, start = start, end = end))
 }
 
-tool_quotes <- generate_tool(
+tool_quotes <- autotool$generate_tool(
   fetch_quotes,
   defaults = list(
     api_key  = "sk-not-shown-to-model",
@@ -155,7 +165,7 @@ and call it whenever the model dispatches:
 
 ``` r
 
-handle_fetch_quotes <- make_handler(
+handle_fetch_quotes <- autotool$make_handler(
   fetch_quotes,
   defaults = list(
     api_key = "sk-not-shown-to-model",
@@ -174,7 +184,7 @@ handle_fetch_quotes(model_emitted)
 #> [1] "2026-04-01"
 #> 
 #> $end
-#> [1] "2026-05-23 18:37:28 UTC"
+#> [1] "2026-05-23 23:35:41 UTC"
 ```
 
 The pinned values are merged in before the function runs. The model
@@ -198,7 +208,7 @@ yourself via `schemas`:
 
 submit_trades <- function(decisions, memo) invisible(NULL)
 
-tool_submit <- generate_tool(
+tool_submit <- autotool$generate_tool(
   submit_trades,
   description = "Submit a batch of trade decisions for execution.",
   schemas = list(
@@ -239,6 +249,55 @@ str(tool_submit$`function`$parameters$properties$decisions, max.level = 2)
 #>   ..$ required  :List of 3
 ```
 
+## 5. Choosing an output format
+
+`autotool` returns the OpenAI / DeepSeek tool shape by default. That
+format drops straight into any OpenAI-compatible endpoint (DeepSeek,
+Mistral, vLLM, llama.cpp, etc.).
+
+For [`ellmer`](https://ellmer.tidyverse.org/), the tidyverse LLM client,
+pass `format = "ellmer"` to get an
+[`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)
+object ready to register on a chat session. The introspection
+(descriptions, types, required-arg list) is identical — only the wrapper
+changes.
+
+``` r
+
+ellmer_tool <- autotool$generate_tool(
+  fetch_quotes,
+  defaults = list(
+    api_key  = "sk-not-shown-to-model",
+    base_url = "https://example.com",
+    retries  = 5L
+  ),
+  format = "ellmer"
+)
+
+# Plug into an ellmer chat session:
+chat <- ellmer::chat_openai()
+chat$register_tool(ellmer_tool)
+chat$chat("Check quotes for AAPL and NVDA.")
+```
+
+`defaults` still works with `format = "ellmer"` — autotool strips the
+hidden arguments from the wrapped function’s visible formals and binds
+them as locals, so ellmer never sees them and the model can’t supply
+them.
+
+`format = "ellmer"` covers strings, integers, numbers, booleans, enums,
+arrays, and objects — recursively. The map is:
+
+| Property type   | ellmer constructor |
+|-----------------|--------------------|
+| `string`        | `type_string()`    |
+| string + `enum` | `type_enum()`      |
+| `integer`       | `type_integer()`   |
+| `number`        | `type_number()`    |
+| `boolean`       | `type_boolean()`   |
+| `array`         | `type_array()`     |
+| `object`        | `type_object()`    |
+
 ## Type-inference reference
 
 | Default value       | Inferred `type`                      |
@@ -250,12 +309,3 @@ str(tool_submit$`function`$parameters$properties$decisions, max.level = 2)
 | `1L`                | `"integer"`                          |
 | `1.5` (or `1`, `0`) | `"number"`                           |
 | `list(...)`         | `"object"` (use `schemas` for shape) |
-
-## Compatibility
-
-The output shape matches OpenAI’s and DeepSeek’s `tool` definitions and
-is accepted as-is by any OpenAI-compatible server. The inner
-`parameters` block is also what
-[`ellmer::tool()`](https://ellmer.tidyverse.org/reference/tool.html)’s
-`arguments` argument expects — so `autotool` can complement `ellmer`
-rather than compete with it.

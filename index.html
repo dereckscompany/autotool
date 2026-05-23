@@ -50,25 +50,45 @@
 <div class="page-header"><h1 id="autotool">autotool<a class="anchor" aria-label="anchor" href="#autotool"></a>
 </h1></div>
 <blockquote>
-<p>Turn any R function into a JSON-schema tool definition an LLM can call.</p>
+<p>Turn any R function into a JSON-schema tool definition an LLM can call — derived automatically from the function’s documentation.</p>
 </blockquote>
 <p>LLM tool calling needs a schema for every function you want the model to reach. Writing those schemas by hand is repetitive, drifts from the function signature, and forces credentials into the same object the model sees. <code>autotool</code> derives the schema from the function itself — its <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code>, its installed help, or its roxygen comments — and gives you a single argument (<code>defaults</code>) for pinning anything the model should not influence.</p>
 <p>The philosophy: <strong>the function is already the contract</strong>. The model should see what it needs to fill in and nothing else. You shouldn’t maintain a second list of argument names just to talk to an LLM.</p>
 <p>Zero hard dependencies — only base R and packages shipped with R.</p>
 <div class="section level2">
+<h2 id="one-line-vs-ten">One line vs ten<a class="anchor" aria-label="anchor" href="#one-line-vs-ten"></a>
+</h2>
+<p>Compare wrapping <code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">stats::rnorm</a></code> for the model with vs without <code>autotool</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Without autotool — ellmer's tool() — every detail typed by hand:</span></span>
+<span><span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">tool</a></span><span class="op">(</span></span>
+<span>  <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span>,</span>
+<span>  <span class="st">"The Normal Distribution"</span>,</span>
+<span>  arguments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    n <span class="op">=</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/type_boolean.html" class="external-link">type_integer</a></span><span class="op">(</span><span class="st">"Number of observations..."</span><span class="op">)</span>,</span>
+<span>    mean <span class="op">=</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/type_boolean.html" class="external-link">type_number</a></span><span class="op">(</span><span class="st">"Vector of means."</span>, required <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
+<span>    sd <span class="op">=</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/type_boolean.html" class="external-link">type_number</a></span><span class="op">(</span><span class="st">"Vector of standard deviations."</span>, required <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># With autotool:</span></span>
+<span><span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span>, format <span class="op">=</span> <span class="st">"ellmer"</span><span class="op">)</span></span></code></pre></div>
+<p>The description, every per-argument description, every type, and the required/optional flags came out of <code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">?rnorm</a></code> and <code>formals(rnorm)</code>. You wrote one line.</p>
+</div>
+<div class="section level2">
 <h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"dereckscompany/autotool"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("renv")</span></span>
+<span><span class="fu">renv</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/renv/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"dereckscompany/autotool"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dereckscompany.github.io/autotool">autotool</a></span><span class="op">)</span></span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">box</span><span class="fu">::</span><span class="fu"><a href="https://klmr.me/box/reference/use.html" class="external-link">use</a></span><span class="op">(</span><span class="va">autotool</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tool</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_tool.html">generate_tool</a></span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">)</span></span>
+<span><span class="va">tool</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tool</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">name</span></span>
 <span><span class="co">#&gt; [1] "rnorm"</span></span>
@@ -85,30 +105,103 @@
 <span><span class="co">#&gt; [1] "vector of means."</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">tool</span><span class="op">$</span><span class="va">`function`</span><span class="op">$</span><span class="va">parameters</span><span class="op">$</span><span class="va">required</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "n"</span></span></code></pre></div>
-<p>That’s the whole API for the simple case. <code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">?rnorm</a></code> supplied the description, the title, and the per-argument descriptions; <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> supplied the argument shape and the <code>required</code> list.</p>
+<p><code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">?rnorm</a></code> supplied the description, the title, and every per-argument description. <code><a href="https://rdrr.io/r/base/formals.html" class="external-link">formals()</a></code> supplied the argument shape and the <code>required</code> list.</p>
 </div>
 <div class="section level2">
 <h2 id="hiding-arguments-from-the-model">Hiding arguments from the model<a class="anchor" aria-label="anchor" href="#hiding-arguments-from-the-model"></a>
 </h2>
-<p>The headline feature. Pin credentials, base URLs, or any implementation detail with <code>defaults</code> — those arguments disappear from the schema the model sees:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tool</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_tool.html">generate_tool</a></span><span class="op">(</span></span>
-<span>  <span class="va">fetch_quotes</span>,</span>
-<span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>api_key <span class="op">=</span> <span class="va">SECRET</span>, base_url <span class="op">=</span> <span class="va">PROD</span>, retries <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co"># The model only sees the trading-relevant args (symbols, start, ...).</span></span></code></pre></div>
-<p>Build a handler closure with the same defaults to invoke when the model dispatches the tool call:</p>
+<p>Pin credentials, base URLs, or any implementation detail with <code>defaults</code> — those arguments disappear from the schema the model sees:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">handle_fetch_quotes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/make_handler.html">make_handler</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">tool</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span></span>
 <span>  <span class="va">fetch_quotes</span>,</span>
 <span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>api_key <span class="op">=</span> <span class="va">SECRET</span>, base_url <span class="op">=</span> <span class="va">PROD</span>, retries <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu">handle_fetch_quotes</span><span class="op">(</span><span class="va">model_args</span><span class="op">)</span></span></code></pre></div>
-<p>Plug the closure into your own handler registry and dispatch by name in your agent loop. If you need post-processing — caching, logging, result munging — just write your own 1-arg function; the factory is a convenience, not a requirement.</p>
-<p>For nested shapes (arrays of objects, etc.) that introspection cannot infer from R’s types, pass an explicit <code>schemas = list(arg = ...)</code> override. See <code><a href="articles/autotool.html">vignette("autotool")</a></code> for the full walkthrough.</p>
+<span><span class="co"># The model only sees symbols, start, ... — never api_key.</span></span></code></pre></div>
+<p>Build a handler closure with the same defaults to invoke when the model dispatches the tool call:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">handle</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">make_handler</span><span class="op">(</span></span>
+<span>  <span class="va">fetch_quotes</span>,</span>
+<span>  defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>api_key <span class="op">=</span> <span class="va">SECRET</span>, base_url <span class="op">=</span> <span class="va">PROD</span>, retries <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu">handle</span><span class="op">(</span><span class="va">model_args</span><span class="op">)</span></span></code></pre></div>
+<p>Plug the closure into your own handler registry and dispatch by name in your agent loop. If you need caching, logging, or other post-processing, write a regular 1-arg function instead — the factory is a convenience, not a requirement.</p>
 </div>
 <div class="section level2">
-<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+<h2 id="output-formats">Output formats<a class="anchor" aria-label="anchor" href="#output-formats"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th><code>format</code></th>
+<th>Returns</th>
+<th>Use with</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>
+<code>"openai"</code> (default)</td>
+<td>plain list (OpenAI / DeepSeek shape)</td>
+<td>OpenAI, DeepSeek, Mistral, vLLM, llama.cpp, any OpenAI-compatible server</td>
+</tr>
+<tr>
+<td><code>"ellmer"</code></td>
+<td>
+<code><a href="https://ellmer.tidyverse.org/reference/tool.html" class="external-link">ellmer::tool()</a></code> object</td>
+<td>the tidyverse <code>ellmer</code> LLM client</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ellmer_tool</span> <span class="op">&lt;-</span> <span class="va">autotool</span><span class="op">$</span><span class="fu">generate_tool</span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span>, format <span class="op">=</span> <span class="st">"ellmer"</span><span class="op">)</span></span>
+<span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_openai.html" class="external-link">chat_openai</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">register_tool</span><span class="op">(</span><span class="va">ellmer_tool</span><span class="op">)</span></span></code></pre></div>
+<p><code>defaults</code> works in both formats — <code>format = "ellmer"</code> strips hidden arguments from the wrapped function’s visible formals automatically.</p>
+</div>
+<div class="section level2">
+<h2 id="overrides">Overrides<a class="anchor" aria-label="anchor" href="#overrides"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Argument</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>defaults</code></td>
+<td>Hide arguments from the schema and inject their pinned values at call time.</td>
+</tr>
+<tr>
+<td><code>descriptions</code></td>
+<td>Replace per-argument description text when installed docs are too terse.</td>
+</tr>
+<tr>
+<td><code>schemas</code></td>
+<td>Replace the full schema for one or more arguments — required for arrays-of-objects and other shapes R’s lack of static types cannot express.</td>
+</tr>
+<tr>
+<td><code>required</code></td>
+<td>Replace the auto-derived required-arg list (<code>NULL</code> = derive; character vector = exact list; <code><a href="https://rdrr.io/r/base/character.html" class="external-link">character()</a></code> = nothing required).</td>
+</tr>
+<tr>
+<td>
+<code>name</code> / <code>description</code>
+</td>
+<td>Override the tool-level name and description.</td>
+</tr>
+</tbody>
+</table>
+<p>See <code><a href="articles/autotool.html">vignette("autotool")</a></code> for the full walkthrough.</p>
+</div>
+<div class="section level2">
+<h2 id="licence">Licence<a class="anchor" aria-label="anchor" href="#licence"></a>
 </h2>
 <p>MIT. See <code>LICENSE</code>.</p>
 </div>
