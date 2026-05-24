@@ -141,23 +141,21 @@ parse_rd_for_fn <- function(pkg, fn_name) {
 #'   2. Rd via `tools::Rd_db()` (installed-package functions).
 #'   3. Empty docs (anonymous functions, deparse'd closures).
 #'
-#' Accepts a vector of candidate names and tries each in order. This
-#' lets [generate_tool()] pass the expression-derived source name first
-#' (the most authoritative) and the user-supplied `name` argument as a
-#' fallback hint — which preserves the alias pattern
-#' `f <- stats::rnorm; generate_tool(f, name = "rnorm")` while still
-#' keeping `name` from hijacking the lookup when it really is just a
-#' tool rename.
+#' The source name passed in here comes from [resolve_fn_name()] — the
+#' expression the user wrote at the [generate_tool()] call site. The
+#' `name` argument of [generate_tool()] is the model-facing tool name
+#' and **never** participates in docs lookup. If you want a function's
+#' docs to be picked up, refer to it by an expression we can resolve
+#' (bare symbol, `pkg::fn`, `env$fn`, or `env[["fn"]]`) rather than
+#' aliasing it through a local variable.
 #'
 #' @param fn The function object.
-#' @param fn_names Character vector of candidate names to try, in order
-#'   of preference. `NULL` entries and an empty vector are tolerated
-#'   and short-circuit to empty docs.
+#' @param fn_name The function's resolved source name, or `NULL` if it
+#'   could not be determined.
 #' @return `list(source = c("roxygen", "rd", "none"), doc = list(title=, args=))`.
 #' @noRd
-get_docs <- function(fn, fn_names) {
-  fn_names <- unique(unlist(fn_names, use.names = FALSE))
-  if (length(fn_names) == 0L) {
+get_docs <- function(fn, fn_name) {
+  if (is.null(fn_name)) {
     return(list(source = "none", doc = list(title = NULL, args = list())))
   }
   src_file <- tryCatch(
@@ -166,21 +164,17 @@ get_docs <- function(fn, fn_names) {
   )
   has_src <- length(src_file) == 1 && !is.na(src_file) && nzchar(src_file) && file.exists(src_file)
   if (has_src) {
-    for (nm in fn_names) {
-      doc <- parse_roxygen_for_fn(src_file, nm)
-      if (!is.null(doc)) {
-        return(list(source = "roxygen", doc = doc))
-      }
+    doc <- parse_roxygen_for_fn(src_file, fn_name)
+    if (!is.null(doc)) {
+      return(list(source = "roxygen", doc = doc))
     }
   }
   env <- environment(fn)
   if (!is.null(env) && isNamespace(env)) {
     pkg <- getNamespaceName(env)
-    for (nm in fn_names) {
-      doc <- parse_rd_for_fn(pkg, nm)
-      if (!is.null(doc)) {
-        return(list(source = "rd", doc = doc))
-      }
+    doc <- parse_rd_for_fn(pkg, fn_name)
+    if (!is.null(doc)) {
+      return(list(source = "rd", doc = doc))
     }
   }
   return(list(source = "none", doc = list(title = NULL, args = list())))
