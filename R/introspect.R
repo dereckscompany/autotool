@@ -19,7 +19,10 @@
 #' argument.
 #'
 #' @param fn The function.
-#' @param fn_name Resolved function name.
+#' @param fn_name The function's resolved source name (used for docs
+#'   lookup). May be `NULL` for anonymous functions.
+#' @param tool_name The name to show in the tool definition (overrides
+#'   `fn_name` when supplied to [generate_tool()] via `name`).
 #' @param defaults Named list of hidden arguments.
 #' @param descriptions Per-argument description overrides.
 #' @param schemas Per-argument schema overrides.
@@ -27,7 +30,7 @@
 #' @param description Tool-level description override.
 #' @return A list as described above.
 #' @noRd
-introspect <- function(fn, fn_name, defaults, descriptions, schemas, required, description) {
+introspect <- function(fn, fn_name, tool_name, defaults, descriptions, schemas, required, description) {
   docs <- get_docs(fn, fn_name)
   fmls <- formals(fn)
   fmls_names <- setdiff(names(fmls), "...")
@@ -95,11 +98,11 @@ introspect <- function(fn, fn_name, defaults, descriptions, schemas, required, d
 
   tool_description <- coalesce(
     coalesce(description, docs$doc$title),
-    sprintf("Call %s().", fn_name)
+    sprintf("Call %s().", tool_name)
   )
 
   return(list(
-    name = fn_name,
+    name = tool_name,
     description = tool_description,
     properties = properties,
     required = effective_required

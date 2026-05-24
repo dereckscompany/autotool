@@ -1,6 +1,6 @@
 Package: autotool
 Title: Generate LLM Tool Definitions from R Functions
-Version: 0.0.1
+Version: 0.0.2
 URL: https://dereckscompany.github.io/autotool,
     https://github.com/dereckscompany/autotool
 BugReports: https://github.com/dereckscompany/autotool/issues
