@@ -31,7 +31,10 @@
 #' @return A list as described above.
 #' @noRd
 introspect <- function(fn, fn_name, tool_name, defaults, descriptions, schemas, required, description) {
-  docs <- get_docs(fn, fn_name)
+  # Try the expression-derived name first; fall back to the tool name only as
+  # a hint for the alias pattern (`f <- stats::rnorm; name = "rnorm"`). The
+  # expression name always wins when it actually resolves docs.
+  docs <- get_docs(fn, c(fn_name, tool_name))
   fmls <- formals(fn)
   fmls_names <- setdiff(names(fmls), "...")
   hidden <- names(defaults)

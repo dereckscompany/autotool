@@ -93,7 +93,9 @@ tool_name_from <- function(fn_name, override) {
     return(fn_name)
   }
   stop(
-    "Cannot infer tool name from an anonymous function; pass `name = \"...\"`.",
+    "Cannot infer the tool name from the call expression (anonymous ",
+    "function, dynamic lookup such as `get(\"fn\")`, or other ",
+    "unresolvable form). Pass `name = \"...\"`.",
     call. = FALSE
   )
 }

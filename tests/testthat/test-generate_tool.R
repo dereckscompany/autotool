@@ -151,6 +151,64 @@ test_that("anonymous function without name errors clearly", {
   )
 })
 
+test_that("alias pattern: name acts as a docs-lookup hint when the expression misses", {
+  # f <- stats::rnorm is a common pattern. resolve_fn_name() returns "f",
+  # which finds no docs. The `name` argument should fill in as a hint so
+  # the real Rd docs surface.
+  f <- stats::rnorm
+  tool <- generate_tool(f, name = "rnorm")
+  expect_equal(tool$`function`$name, "rnorm")
+  expect_match(tool$`function`$description, "Normal Distribution")
+})
+
+test_that("alias pattern works for source-loaded functions too", {
+  tmp <- tempfile(fileext = ".R")
+  writeLines(
+    c(
+      "#' Multiplies its inputs.",
+      "#'",
+      "#' @param a First factor.",
+      "#' @param b Second factor.",
+      "real_mul <- function(a, b = 1) a * b"
+    ),
+    tmp
+  )
+  env <- new.env()
+  sys.source(tmp, envir = env, keep.source = TRUE)
+  # Alias the function out of the env (resolve_fn_name returns "f")
+  f <- env$real_mul
+  tool <- generate_tool(f, name = "real_mul")
+  expect_match(tool$`function`$description, "Multiplies its inputs")
+  expect_equal(
+    tool$`function`$parameters$properties$a$description,
+    "First factor."
+  )
+  unlink(tmp)
+})
+
+test_that("env[['fn']] expressions resolve their source name", {
+  tmp <- tempfile(fileext = ".R")
+  writeLines(
+    c(
+      "#' Squares its input.",
+      "#'",
+      "#' @param x Number to square.",
+      "sq <- function(x) x * x"
+    ),
+    tmp
+  )
+  env <- new.env()
+  sys.source(tmp, envir = env, keep.source = TRUE)
+  tool <- generate_tool(env[["sq"]])
+  expect_equal(tool$`function`$name, "sq")
+  expect_match(tool$`function`$description, "Squares its input")
+  expect_equal(
+    tool$`function`$parameters$properties$x$description,
+    "Number to square."
+  )
+  unlink(tmp)
+})
+
 test_that("roxygen-via-srcref backend reads #' lines above a definition", {
   tmp <- tempfile(fileext = ".R")
   writeLines(
