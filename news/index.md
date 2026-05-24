@@ -1,5 +1,28 @@
 # Changelog
 
+## autotool 0.0.2
+
+### Bug fixes
+
+- `generate_tool(fn, name = "x")` no longer hijacks the source-code
+  lookup. The `name` argument is for the tool name the model sees;
+  documentation lookup (roxygen via `srcref`, Rd via
+  [`tools::Rd_db()`](https://rdrr.io/r/tools/Rdutils.html)) now always
+  uses the function’s actual source name. Previously, passing `name`
+  caused autotool to search the source file for a definition matching
+  the override and silently fall back to a `"Call <name>()."` stub when
+  nothing matched. Found by dogfooding in `tradebot-mini`.
+
+- Source-name resolution now handles `env$fn` and `env[["fn"]]`
+  expressions in addition to bare symbols and `pkg::fn`. Functions
+  loaded via [`box::use()`](https://klmr.me/box/reference/use.html) and
+  `sys.source(..., envir = env)` are now documented correctly without
+  needing `name = "..."` as a workaround.
+
+- Anonymous functions (`function(x) ...` literals passed inline) now
+  fail with a clear message asking for `name = "..."` instead of cryptic
+  regex errors downstream.
+
 ## autotool 0.0.1
 
 Initial public release.

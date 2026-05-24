@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">autotool</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,9 +29,18 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/dereckscompany/autotool/blob/v0.0.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/dereckscompany/autotool/blob/v0.0.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2" id="autotool-002">autotool 0.0.2<a class="anchor" aria-label="anchor" href="#autotool-002"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-0-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-0-2"></a></h3>
+<ul><li><p><code>generate_tool(fn, name = "x")</code> no longer hijacks the source-code lookup. The <code>name</code> argument is for the tool name the model sees; documentation lookup (roxygen via <code>srcref</code>, Rd via <code><a href="https://rdrr.io/r/tools/Rdutils.html" class="external-link">tools::Rd_db()</a></code>) now always uses the function’s actual source name. Previously, passing <code>name</code> caused autotool to search the source file for a definition matching the override and silently fall back to a <code>"Call &lt;name&gt;()."</code> stub when nothing matched. Found by dogfooding in <code>tradebot-mini</code>.</p></li>
+<li><p>Source-name resolution now handles <code>env$fn</code> and <code>env[["fn"]]</code> expressions in addition to bare symbols and <code>pkg::fn</code>. Functions loaded via <code><a href="https://klmr.me/box/reference/use.html" class="external-link">box::use()</a></code> and <code>sys.source(..., envir = env)</code> are now documented correctly without needing <code>name = "..."</code> as a workaround.</p></li>
+<li><p>Anonymous functions (<code>function(x) ...</code> literals passed inline) now fail with a clear message asking for <code>name = "..."</code> instead of cryptic regex errors downstream.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.1" id="autotool-001">autotool 0.0.1<a class="anchor" aria-label="anchor" href="#autotool-001"></a></h2>
 <p>Initial public release.</p>
@@ -44,7 +53,8 @@
 <li><p><code><a href="../reference/make_handler.html">make_handler()</a></code> returns a 1-argument closure that merges hidden defaults with the model’s tool-call arguments and dispatches to the underlying function. Drop it into your own handler registry when using <code>format = "openai"</code>.</p></li>
 <li><p>Zero hard runtime dependencies — only base R. <code>ellmer</code>, <code>box</code>, and <code>renv</code> are in <code>Suggests</code> for the format-conversion and vignette paths.</p></li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

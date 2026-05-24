@@ -184,7 +184,7 @@ handle_fetch_quotes(model_emitted)
 #> [1] "2026-04-01"
 #> 
 #> $end
-#> [1] "2026-05-23 23:35:41 UTC"
+#> [1] "2026-05-24 00:23:19 UTC"
 ```
 
 The pinned values are merged in before the function runs. The model
