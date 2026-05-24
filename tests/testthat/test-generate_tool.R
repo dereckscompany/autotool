@@ -112,6 +112,45 @@ test_that("non-function input is rejected", {
   expect_error(generate_tool(42, name = "n"), "must be a function")
 })
 
+test_that("name override changes the tool name but NOT the docs lookup", {
+  tmp <- tempfile(fileext = ".R")
+  writeLines(
+    c(
+      "#' Documented under its real source name.",
+      "#'",
+      "#' @param a An argument.",
+      "real_fn <- function(a = 1) a"
+    ),
+    tmp
+  )
+  env <- new.env()
+  sys.source(tmp, envir = env, keep.source = TRUE)
+  tool <- generate_tool(env$real_fn, name = "custom_tool_name")
+  # Tool name reflects the override
+  expect_equal(tool$`function`$name, "custom_tool_name")
+  # But the description and per-arg description still come from roxygen
+  # on the source function — the override must not bypass doc lookup.
+  expect_match(tool$`function`$description, "Documented under its real source name")
+  expect_equal(
+    tool$`function`$parameters$properties$a$description,
+    "An argument."
+  )
+  unlink(tmp)
+})
+
+test_that("anonymous function requires explicit name and has no docs", {
+  tool <- generate_tool(function(x) x, name = "anon")
+  expect_equal(tool$`function`$name, "anon")
+  expect_equal(tool$`function`$description, "Call anon().")
+})
+
+test_that("anonymous function without name errors clearly", {
+  expect_error(
+    generate_tool(function(x) x),
+    "anonymous function"
+  )
+})
+
 test_that("roxygen-via-srcref backend reads #' lines above a definition", {
   tmp <- tempfile(fileext = ".R")
   writeLines(

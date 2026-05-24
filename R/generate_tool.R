@@ -84,15 +84,18 @@ generate_tool <- function(
   format = c("openai", "ellmer")
 ) {
   fn_expr <- substitute(fn)
-  fn_name <- extract_fn_name(fn_expr, name)
   if (!is.function(fn)) {
     stop("`fn` must be a function.", call. = FALSE)
   }
   format <- match.arg(format)
 
+  fn_name <- resolve_fn_name(fn_expr)
+  tool_name <- tool_name_from(fn_name, name)
+
   rep <- introspect(
     fn = fn,
     fn_name = fn_name,
+    tool_name = tool_name,
     defaults = defaults,
     descriptions = descriptions,
     schemas = schemas,

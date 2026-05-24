@@ -146,6 +146,9 @@ parse_rd_for_fn <- function(pkg, fn_name) {
 #' @return `list(source = c("roxygen", "rd", "none"), doc = list(title=, args=))`.
 #' @noRd
 get_docs <- function(fn, fn_name) {
+  if (is.null(fn_name)) {
+    return(list(source = "none", doc = list(title = NULL, args = list())))
+  }
   src_file <- tryCatch(
     utils::getSrcFilename(fn, full.names = TRUE),
     error = function(e) NULL
