@@ -1,5 +1,11 @@
 # autotool 0.0.2
 
+## Documentation
+
+* Added a hex-sticker logo.
+* Switched to a standard MIT `LICENSE` (now detected by GitHub) and added a
+  citation note with ORCID to the README.
+
 ## Bug fixes
 
 * `generate_tool(fn, name = "x")` no longer hijacks the source-code

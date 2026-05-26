@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# autotool
+# autotool <img src="man/figures/logo.png" alt="autotool logo" align="right" height="139" />
 
 > Turn any R function into a JSON-schema tool definition an LLM can call —
 > derived automatically from the function's documentation.
@@ -58,8 +58,10 @@ wrote one line.
 
 ## Install
 
+`autotool` is not on CRAN; install it from GitHub with renv:
+
 ```r
-# install.packages("renv")
+# first install renv itself if you don't have it: install.packages("renv")
 renv::install("dereckscompany/autotool")
 ```
 
@@ -148,6 +150,12 @@ arguments from the wrapped function's visible formals automatically.
 
 See `vignette("autotool")` for the full walkthrough.
 
-## Licence
+## License
 
-MIT. See `LICENSE`.
+MIT © Dereck Mezquita. See [LICENSE](LICENSE) for details.
+
+## Citation
+
+If you use `autotool` in your work, please cite it:
+
+> Mezquita, D. (2026). autotool. https://github.com/dereckscompany/autotool. ORCID: [0000-0002-9307-6762](https://orcid.org/0000-0002-9307-6762)

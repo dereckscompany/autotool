@@ -12,3 +12,8 @@
 ^local$
 ^dev$
 ^scripts$
+^\.cruft\.json$
+^\.lintr$
+^air\.toml$
+^README\.Rmd$
+^README\.html$
