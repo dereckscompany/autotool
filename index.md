@@ -46,9 +46,11 @@ You wrote one line.
 
 ## Install
 
+`autotool` is not on CRAN; install it from GitHub with renv:
+
 ``` r
 
-# install.packages("renv")
+# first install renv itself if you don't have it: install.packages("renv")
 renv::install("dereckscompany/autotool")
 ```
 
@@ -144,6 +146,16 @@ See
 [`vignette("autotool")`](https://dereckscompany.github.io/autotool/articles/autotool.md)
 for the full walkthrough.
 
-## Licence
+## License
 
-MIT. See `LICENSE`.
+MIT © Dereck Mezquita. See
+[LICENSE](https://dereckscompany.github.io/autotool/LICENSE) for
+details.
+
+## Citation
+
+If you use `autotool` in your work, please cite it:
+
+> Mezquita, D. (2026). autotool.
+> <https://github.com/dereckscompany/autotool>. ORCID:
+> [0000-0002-9307-6762](https://orcid.org/0000-0002-9307-6762)

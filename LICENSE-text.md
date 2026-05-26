@@ -1,6 +1,6 @@
 # License
 
-    # MIT License
+    MIT License
 
     Copyright (c) 2026 Dereck Mezquita
 
@@ -13,12 +13,6 @@
 
     The above copyright notice and this permission notice shall be included in all
     copies or substantial portions of the Software.
-
-    Additionally, any use of this Software in commercial, academic or research settings
-    must include appropriate citation. The required citation is:
-
-    Mezquita, D. (2026). autotool. https://github.com/dereckscompany/autotool.
-    ORCID: 0000-0002-9307-6762
 
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

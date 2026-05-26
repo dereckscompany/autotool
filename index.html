@@ -13,6 +13,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Generate LLM Tool Definitions from R Functions">
 <meta name="description" content="Build OpenAI / Anthropic / DeepSeek tool definitions directly from any R function by introspecting its signature plus its roxygen or installed-package help. Hide implementation-detail arguments (credentials, base URLs, retry budgets) so the model never sees them, then inject them at call time. Zero hard runtime dependencies — only base R and packages shipped with R.">
 <meta property="og:description" content="Build OpenAI / Anthropic / DeepSeek tool definitions directly from any R function by introspecting its signature plus its roxygen or installed-package help. Hide implementation-detail arguments (credentials, base URLs, retry budgets) so the model never sees them, then inject them at call time. Zero hard runtime dependencies — only base R and packages shipped with R.">
+<meta property="og:image" content="https://dereckscompany.github.io/autotool/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -47,8 +48,10 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="autotool">autotool<a class="anchor" aria-label="anchor" href="#autotool"></a>
-</h1></div>
+<div class="page-header">
+<img src="logo.png" class="logo" alt=""><h1 id="autotool-">autotool <a class="anchor" aria-label="anchor" href="#autotool-"></a>
+</h1>
+</div>
 <blockquote>
 <p>Turn any R function into a JSON-schema tool definition an LLM can call — derived automatically from the function’s documentation.</p>
 </blockquote>
@@ -78,8 +81,9 @@
 <div class="section level2">
 <h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
 </h2>
+<p><code>autotool</code> is not on CRAN; install it from GitHub with renv:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("renv")</span></span>
+<code class="sourceCode R"><span><span class="co"># first install renv itself if you don't have it: install.packages("renv")</span></span>
 <span><span class="fu">renv</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/renv/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"dereckscompany/autotool"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -201,9 +205,17 @@
 <p>See <code><a href="articles/autotool.html">vignette("autotool")</a></code> for the full walkthrough.</p>
 </div>
 <div class="section level2">
-<h2 id="licence">Licence<a class="anchor" aria-label="anchor" href="#licence"></a>
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>MIT. See <code>LICENSE</code>.</p>
+<p>MIT © Dereck Mezquita. See <a href="LICENSE">LICENSE</a> for details.</p>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use <code>autotool</code> in your work, please cite it:</p>
+<blockquote>
+<p>Mezquita, D. (2026). autotool. <a href="https://github.com/dereckscompany/autotool" class="external-link uri">https://github.com/dereckscompany/autotool</a>. ORCID: <a href="https://orcid.org/0000-0002-9307-6762" class="external-link">0000-0002-9307-6762</a></p>
+</blockquote>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
