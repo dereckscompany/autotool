@@ -18,5 +18,18 @@
       "_commit": "3af483e52946908c534fbe97c10e001209333909"
     }
   },
-  "directory": "template-r-package"
+  "directory": "template-r-package",
+  "skip": [
+    "R/**",
+    "src/**",
+    "man/**",
+    "tests/testthat/**",
+    "vignettes/**",
+    "DESCRIPTION",
+    "NAMESPACE",
+    ".lintr",
+    "_pkgdown.yml",
+    "README.Rmd",
+    "inst/WORDLIST"
+  ]
 }
