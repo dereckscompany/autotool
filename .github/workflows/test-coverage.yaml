@@ -1,5 +1,8 @@
 # Test coverage workflow - generates HTML report and deploys to GitHub Pages
 # Coverage report available at: https://dereckscompany.github.io/autotool/coverage/
+#
+# renv is the package manager everywhere: dependencies come from
+# renv.lock via setup-renv (covr + DT included as dev dependencies).
 on:
   workflow_dispatch:
 
@@ -11,13 +14,6 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-# renv ships with the package for LOCAL dependency management; on CI the
-# r-lib actions install from DESCRIPTION into the runner library, so the
-# renv autoloader must stay out of the way (it would redirect .libPaths
-# to the empty project library and hide the installed dependencies).
-env:
-  RENV_CONFIG_AUTOLOADER_ENABLED: false
 
 jobs:
   test-coverage:
@@ -32,10 +28,7 @@ jobs:
         with:
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::covr, any::DT
-          needs: coverage
+      - uses: r-lib/actions/setup-renv@v2
 
       - name: Generate coverage report
         run: |

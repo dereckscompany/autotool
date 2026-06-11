@@ -24,9 +24,13 @@ Depends:
     R (>= 4.0)
 Suggests:
     box,
+    covr,
+    DT,
     ellmer,
     knitr,
+    lintr,
     pkgdown,
+    rcmdcheck,
     renv,
     rmarkdown,
     testthat (>= 3.0.0)
