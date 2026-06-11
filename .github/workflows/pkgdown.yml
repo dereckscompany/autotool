@@ -13,6 +13,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# renv ships with the package for LOCAL dependency management; on CI the
+# r-lib actions install from DESCRIPTION into the runner library, so the
+# renv autoloader must stay out of the way (it would redirect .libPaths
+# to the empty project library and hide the installed dependencies).
+env:
+  RENV_CONFIG_AUTOLOADER_ENABLED: false
+
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
