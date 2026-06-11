@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/dereckscompany/templates-cookiecutter.git",
-  "commit": "3af483e52946908c534fbe97c10e001209333909",
-  "checkout": "3af483e52946908c534fbe97c10e001209333909",
+  "commit": "0aa3efd3ab6bd5a4fc649211dce79da5cda26d8f",
+  "checkout": null,
   "context": {
     "cookiecutter": {
       "package_name": "autotool",
@@ -15,8 +15,21 @@
       "license": "MIT",
       "use_rcpp": true,
       "_template": "https://github.com/dereckscompany/templates-cookiecutter.git",
-      "_commit": "3af483e52946908c534fbe97c10e001209333909"
+      "_commit": "0aa3efd3ab6bd5a4fc649211dce79da5cda26d8f"
     }
   },
-  "directory": "template-r-package"
+  "directory": "template-r-package",
+  "skip": [
+    "R/**",
+    "src/**",
+    "man/**",
+    "tests/testthat/**",
+    "vignettes/**",
+    "DESCRIPTION",
+    "NAMESPACE",
+    ".lintr",
+    "_pkgdown.yml",
+    "README.Rmd",
+    "inst/WORDLIST"
+  ]
 }
