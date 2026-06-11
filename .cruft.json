@@ -30,6 +30,8 @@
     ".lintr",
     "_pkgdown.yml",
     "README.Rmd",
-    "inst/WORDLIST"
+    "inst/WORDLIST",
+    "renv/**",
+    "renv.lock"
   ]
 }
