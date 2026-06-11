@@ -2,13 +2,10 @@
 # ============================================================================
 # LOGO.R - Generate the autotool hex sticker
 # ============================================================================
-# Multi-layer compositing: ggplot2 renders layers, magick applies a real
-# gaussian-blur glow via screen blending.
-#
-# Concept: a gear / cog -- the universal "tool & automation" mark -- glowing
-# inside a hexagon, evoking autotool's job of turning R functions into ready
-# LLM tool definitions automatically. Dark slate field, tech-blue gear, soft
-# glow. The "autotool" wordmark sits below.
+# Flat, clean hex sticker in the tidyverse / plyr family style: a small,
+# limited palette, flat shapes, no glow. A wrench -- the iconic tool, a nod to
+# dplyr's pliers -- sits across the hex. autotool is, literally, an automatic
+# tool.
 #
 # Usage:  Rscript scripts/LOGO.R
 # Deps:   ggplot2, magick
@@ -18,17 +15,16 @@ library(ggplot2)
 library(magick)
 
 # ============================================================================
-# Palette
+# Palette  (3 colours: parchment field, terracotta tool, dark slate ink)
 # ============================================================================
 
-col_hex_fill <- "#0E1320" # deep slate field
-col_hex_edge <- "#3B9EFF" # tech-blue hex border
-col_gate_ring <- "#1E2A3A" # subtle inner ring
-col_gear <- "#3B9EFF" # the gear — tool blue
-col_gear_core <- "#A9D6FF" # bright inner highlight
-col_hub <- "#0E1320" # gear hub hole (matches field)
-col_glow <- "#3B9EFF" # glow source colour
-col_wordmark <- "#F0F4F8" # near-white wordmark
+col_bg <- "#EFE7D6" # warm parchment field
+col_edge <- "#2F4858" # dark slate border + ink
+col_inner <- "#C9BBA0" # faint inner border line
+col_tool <- "#E07A3F" # terracotta wrench
+col_tool_edge <- "#B85C28" # wrench outline
+col_tool_hi <- "#F1A86F" # soft highlight on the wrench
+col_word <- "#2F4858" # wordmark ink
 
 # ============================================================================
 # Geometry helpers
@@ -40,27 +36,29 @@ hex_vertices <- function(cx = 0, cy = 0, r = 1) {
   return(data.frame(x = cx + r * cos(angles), y = cy + r * sin(angles)))
 }
 
-filled_circle <- function(cx, cy, r, n = 180) {
-  angles <- seq(0, 2 * pi, length.out = n)
-  return(data.frame(x = cx + r * cos(angles), y = cy + r * sin(angles)))
+# Rotate a data frame of x/y points by `theta` radians about (cx, cy).
+rotate_df <- function(df, theta, cx = 0, cy = 0) {
+  ct <- cos(theta)
+  st <- sin(theta)
+  x <- df$x - cx
+  y <- df$y - cy
+  return(data.frame(x = cx + x * ct - y * st, y = cy + x * st + y * ct))
 }
 
-# A gear outline: `n_teeth` square teeth between the tip radius `r_out` and the
-# root radius `r_root`, centred at (cx, cy).
-gear_polygon <- function(cx, cy, r_out, r_root, n_teeth = 9, tooth_frac = 0.5) {
-  step <- 2 * pi / n_teeth
-  xs <- numeric(0)
-  ys <- numeric(0)
-  for (i in seq_len(n_teeth)) {
-    a0 <- (i - 1) * step
-    a_top_end <- a0 + step * tooth_frac
-    a_valley_end <- a0 + step
-    angles <- c(a0, a0, a_top_end, a_top_end, a_valley_end)
-    radii <- c(r_root, r_out, r_out, r_root, r_root)
-    xs <- c(xs, cx + radii * cos(angles))
-    ys <- c(ys, cy + radii * sin(angles))
-  }
-  return(data.frame(x = xs, y = ys))
+# Silhouette of an open-end wrench, head (with U-notch) pointing up, handle
+# pointing down, centred near the origin.
+wrench_polygon <- function() {
+  hw <- 0.055 # handle half-width
+  half_w <- 0.170 # head half-width
+  notch_w <- 0.062 # jaw opening half-width
+  y_bot <- -0.30 # handle bottom
+  y_head <- 0.05 # head widens here
+  y_notch <- 0.16 # bottom of jaw notch
+  y_top <- 0.33 # prong tips
+  return(data.frame(
+    x = c(-hw, -hw, -half_w, -half_w, -notch_w, -notch_w, notch_w, notch_w, half_w, half_w, hw, hw),
+    y = c(y_bot, y_head, y_head, y_top, y_top, y_notch, y_notch, y_top, y_top, y_head, y_head, y_bot)
+  ))
 }
 
 logo_theme <- function() {
@@ -78,51 +76,41 @@ logo_coord <- function() {
   return(coord_equal(xlim = c(-0.67, 0.67), ylim = c(-0.67, 0.67)))
 }
 
-# Render a ggplot to a magick image on a transparent background.
-render_layer <- function(p, width = 3000, height = 3480) {
-  tmp <- tempfile(fileext = ".png")
-  ggsave(tmp, plot = p, width = width / 600, height = height / 600, dpi = 600, bg = "transparent")
-  img <- image_read(tmp)
-  unlink(tmp)
-  return(img)
+# The wrench, rotated diagonally and nudged up to leave room for the wordmark.
+wrench_mark <- function(shift_x = 0, shift_y = 0) {
+  wr <- wrench_polygon()
+  wr <- rotate_df(wr, theta = -0.55, cx = 0, cy = 0.015)
+  wr$x <- wr$x + shift_x
+  wr$y <- wr$y + shift_y + 0.09
+  return(wr)
 }
 
-# Shared geometry: gear sits slightly above centre, leaving room for the
-# wordmark below.
-gear_cy <- 0.06
-
 # ============================================================================
-# Layers
+# Build the sticker (single flat layer, no glow)
 # ============================================================================
 
-build_base_layer <- function() {
+build_logo <- function() {
   hex_outer <- hex_vertices(0, 0, 0.62)
-  hex_inner <- hex_vertices(0, 0, 0.50)
-  gear <- gear_polygon(0, gear_cy, r_out = 0.34, r_root = 0.26, n_teeth = 9)
-  hub <- filled_circle(0, gear_cy, 0.13)
-  hub_ring <- rbind(filled_circle(0, gear_cy, 0.13), filled_circle(0, gear_cy, 0.13)[1, ])
-  axle <- filled_circle(0, gear_cy, 0.05)
+  hex_line <- hex_vertices(0, 0, 0.55)
+  wrench <- wrench_mark()
+  wrench_shadow <- wrench_mark(shift_x = 0.012, shift_y = -0.012)
 
   ggplot() +
-    # Hex field
-    geom_polygon(data = hex_outer, aes(x, y), fill = col_hex_fill, colour = col_hex_edge, linewidth = 7) +
-    # Subtle inner ring
-    geom_polygon(data = hex_inner, aes(x, y), fill = NA, colour = col_gate_ring, linewidth = 2, linejoin = "mitre") +
-    # Gear body
-    geom_polygon(data = gear, aes(x, y), fill = col_gear, colour = NA) +
-    # Hub hole
-    geom_polygon(data = hub, aes(x, y), fill = col_hub, colour = NA) +
-    # Hub ring highlight
-    geom_path(data = hub_ring, aes(x, y), colour = col_gear_core, linewidth = 5) +
-    # Axle dot
-    geom_polygon(data = axle, aes(x, y), fill = col_gear_core, colour = NA) +
+    # Parchment field with dark border
+    geom_polygon(data = hex_outer, aes(x, y), fill = col_bg, colour = col_edge, linewidth = 9) +
+    # Faint inner border line
+    geom_polygon(data = hex_line, aes(x, y), fill = NA, colour = col_inner, linewidth = 1.4, linejoin = "mitre") +
+    # Soft flat shadow under the wrench
+    geom_polygon(data = wrench_shadow, aes(x, y), fill = col_tool_edge, colour = NA, alpha = 0.35) +
+    # Wrench body
+    geom_polygon(data = wrench, aes(x, y), fill = col_tool, colour = col_tool_edge, linewidth = 2) +
     # Wordmark
     annotate(
       "text",
       x = 0,
-      y = -0.42,
+      y = -0.39,
       label = "autotool",
-      colour = col_wordmark,
+      colour = col_word,
       size = 13,
       fontface = "bold",
       family = "sans"
@@ -131,17 +119,8 @@ build_base_layer <- function() {
     logo_theme()
 }
 
-# Glow source: the gear, to be blurred.
-build_glow_layer <- function() {
-  gear <- gear_polygon(0, gear_cy, r_out = 0.34, r_root = 0.26, n_teeth = 9)
-  ggplot() +
-    geom_polygon(data = gear, aes(x, y), fill = col_glow, colour = NA) +
-    logo_coord() +
-    logo_theme()
-}
-
 # ============================================================================
-# Composite
+# Render
 # ============================================================================
 
 generate_logo <- function(
@@ -149,23 +128,18 @@ generate_logo <- function(
   px_width = 3000,
   px_height = 3480
 ) {
-  message("Rendering base layer...")
-  base_img <- render_layer(build_base_layer(), px_width, px_height)
-
-  message("Rendering glow layer...")
-  glow_img <- render_layer(build_glow_layer(), px_width, px_height)
-
-  message("Blurring glow...")
-  glow_wide <- image_blur(glow_img, radius = 0, sigma = 45)
-  glow_tight <- image_blur(glow_img, radius = 0, sigma = 15)
-
-  message("Compositing...")
-  final <- base_img |>
-    image_composite(glow_wide, operator = "screen") |>
-    image_composite(glow_tight, operator = "screen") |>
-    image_composite(base_img, operator = "over")
-
-  final <- image_trim(final)
+  message("Rendering sticker...")
+  tmp <- tempfile(fileext = ".png")
+  ggsave(
+    tmp,
+    plot = build_logo(),
+    width = px_width / 600,
+    height = px_height / 600,
+    dpi = 600,
+    bg = "transparent"
+  )
+  final <- image_trim(image_read(tmp))
+  unlink(tmp)
 
   dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
   image_write(final, output_path, format = "png")

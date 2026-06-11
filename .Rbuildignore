@@ -13,7 +13,7 @@
 ^scripts$
 ^\.cruft\.json$
 ^\.lintr$
-^LICENSE\.md$
+^LICENSE$
 ^\.clang-format$
 ^air\.toml$
 ^README\.Rmd$
